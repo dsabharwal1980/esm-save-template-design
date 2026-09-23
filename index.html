@@ -344,7 +344,7 @@ table.spec td:first-child { font-weight: 700; color: var(--sf-text); width: 150p
         <div class="fg">
           <label class="fg-lbl req" for="tplName">Template Name</label>
           <input id="tplName" class="inp" type="text"
-                 value="East Group Internet and Mobile Bundle"
+                 value="East Group Internet + Mobile Bundle"
                  placeholder="Enter a template name"
                  oninput="tplNameValidate(this)" />
           <div id="tplNameMsg" class="im"></div>
@@ -449,10 +449,10 @@ table.spec td:first-child { font-weight: 700; color: var(--sf-text); width: 150p
           <label class="fg-lbl req">Template Name</label>
           <!-- Error state 1: duplicate name -->
           <input class="inp has-err" type="text"
-                 value="East Group Internet and Mobile Bundle" readonly />
+                 value="East Group Internet + Mobile Bundle" readonly />
           <div class="im err show" style="margin-top:4px">
             <em class="im-icon">⊘</em>
-            <span>A template named <strong>"East Group Internet and Mobile Bundle"</strong> already exists.
+            <span>A template named <strong>"East Group Internet + Mobile Bundle"</strong> already exists.
             Please choose a unique name.</span>
           </div>
           <div class="char-ctr">38 / 80</div>
@@ -461,11 +461,11 @@ table.spec td:first-child { font-weight: 700; color: var(--sf-text); width: 150p
         <div class="fg">
           <label class="fg-lbl req">Template Name <span style="font-weight:400;color:#706e6b;font-size:11px">(special-char error example)</span></label>
           <input class="inp has-err" type="text"
-                 value="East Group #Internet &amp; Mobile" readonly />
+                 value="East Group Internet @Mobile #2024" readonly />
           <div class="im err show" style="margin-top:4px">
             <em class="im-icon">⊘</em>
             <span>Template Name cannot contain special characters.
-            Only letters, numbers, spaces, hyphens ( - ) and underscores ( _ ) are allowed.</span>
+            Only letters, numbers, spaces, hyphens ( - ), underscores ( _ ), plus ( + ) and ampersand ( &amp; ) are allowed.</span>
           </div>
           <div class="char-ctr">32 / 80</div>
         </div>
@@ -489,7 +489,7 @@ table.spec td:first-child { font-weight: 700; color: var(--sf-text); width: 150p
             <div class="im err show" style="margin-top:4px">
               <em class="im-icon">⊘</em>
               <span>Category name cannot contain special characters.
-              Only letters, numbers, spaces, hyphens ( - ) and underscores ( _ ) are allowed.</span>
+              Only letters, numbers, spaces, hyphens ( - ), underscores ( _ ), plus ( + ) and ampersand ( &amp; ) are allowed.</span>
             </div>
             <div class="char-ctr">14 / 255</div>
           </div>
@@ -570,7 +570,7 @@ table.spec td:first-child { font-weight: 700; color: var(--sf-text); width: 150p
             </tr>
             <tr>
               <td>Validation — special chars</td>
-              <td><strong>Blocking.</strong> Only <code>a–z A–Z 0–9 space - _</code> allowed.
+              <td><strong>Blocking.</strong> Only <code>a–z A–Z 0–9 space - _ + &amp;</code> allowed.
               Show red error inline. Save button disabled.</td>
             </tr>
             <tr>
@@ -604,7 +604,7 @@ table.spec td:first-child { font-weight: 700; color: var(--sf-text); width: 150p
             </tr>
             <tr>
               <td>Validation — special chars</td>
-              <td><strong>Blocking.</strong> Only <code>a–z A–Z 0–9 space - _</code> allowed.
+              <td><strong>Blocking.</strong> Only <code>a–z A–Z 0–9 space - _ + &amp;</code> allowed.
               Show red error inline. Save button disabled.</td>
             </tr>
             <tr>
@@ -679,7 +679,7 @@ table.spec td:first-child { font-weight: 700; color: var(--sf-text); width: 150p
 // - Name uniqueness check runs against this list
 // - CATS is derived from distinct Category__c values across these records
 const EXISTING_TEMPLATES = [
-  { name: 'East Group Internet and Mobile Bundle', category: 'Enterprise' },
+  { name: 'East Group Internet + Mobile Bundle', category: 'Enterprise' },
   { name: 'NHS Broadband Renewal Pack',          category: 'Public Sector' },
   { name: 'SMB Starter Bundle',                  category: 'SMB' },
   { name: 'Retail Data Centre Connect',          category: 'Retail' },
@@ -695,7 +695,7 @@ const TAGS = ['enterprise','strategic-account','renewal','q4-priority','mobile-o
 const MAX_CAT  = 255;
 const MAX_TAG  = 80;
 const MAX_NAME = 80;
-const SPECIAL  = /[^a-zA-Z0-9 \-_]/;
+const SPECIAL  = /[^a-zA-Z0-9 \-_+&]/;
 
 /* ── State ───────────────────────────────────────────────────── */
 let catSelected = null; // { val, isNew }
@@ -751,7 +751,7 @@ function tplNameValidate(inp) {
     inp.classList.add('has-err');
     showMsg(msg, 'err', '⊘',
       'Template Name cannot contain special characters. '
-      + 'Only letters, numbers, spaces, hyphens ( - ) and underscores ( _ ) are allowed.');
+      + 'Only letters, numbers, spaces, hyphens ( - ), underscores ( _ ), plus ( + ) and ampersand ( &amp; ) are allowed.');
     updateSave(false); return;
   }
   if (v.length > MAX_NAME) {
@@ -881,7 +881,7 @@ function catValidate(v) {
   if (SPECIAL.test(v)) {
     showMsg(msg, 'err',
       '⊘', 'Category name cannot contain special characters. '
-           + 'Only letters, numbers, spaces, hyphens ( - ) and underscores ( _ ) are allowed.');
+           + 'Only letters, numbers, spaces, hyphens ( - ), underscores ( _ ), plus ( + ) and ampersand ( &amp; ) are allowed.');
     updateSave(false); return;
   }
   if (v.length > MAX_CAT) {
@@ -1017,7 +1017,7 @@ function tagValidate(v) {
   if (SPECIAL.test(v)) {
     showMsg(msg, 'err', '⊘',
       'Tag name cannot contain special characters. '
-      + 'Only letters, numbers, spaces, hyphens ( - ) and underscores ( _ ) are allowed.');
+      + 'Only letters, numbers, spaces, hyphens ( - ), underscores ( _ ), plus ( + ) and ampersand ( &amp; ) are allowed.');
     updateSave(false); return;
   }
   if (v.length > MAX_TAG) {
