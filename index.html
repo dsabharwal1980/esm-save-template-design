@@ -325,10 +325,11 @@ table.spec td:first-child { font-weight: 700; color: var(--sf-text); width: 150p
   <div id="sA" class="scene on">
     <div class="dnote">
       <strong>Interactive mock</strong> — Template Name, Category, and Tags fields are live.
-      Template Name: max 80 chars, no special characters — try typing <code>Launch @2024</code> to see the error.
-      Category: type <code>Ent</code> to see existing matches, <code>Logistics</code> for the Create option,
-      or <code>Enterprise</code> to see the duplicate info.
-      Tags: type <code>ren</code> to find <em>renewal</em>, or <code>abc</code> to create a new tag.
+      <strong>Template Name:</strong> the pre-filled value <code>East Group Internet + Mobile Bundle</code> already exists — edit it to see the duplicate block.
+      Try <code>Launch @2024</code> for a special-char error, or type more than 80 chars for the length error.
+      <strong>Category:</strong> options come from distinct Category values on existing <code>SalesConfigTemplate__c</code> records.
+      Type <code>Ent</code> to filter, <code>Logistics</code> to create new, or <code>Enterprise</code> for the "already exists" info.
+      <strong>Tags:</strong> type <code>ren</code> to find <em>renewal</em>, or <code>abc</code> to create a new tag.
     </div>
 
     <div class="modal" id="modalA">
@@ -443,17 +444,30 @@ table.spec td:first-child { font-weight: 700; color: var(--sf-text); width: 150p
 
       <div class="modal-body">
 
-        <!-- Template Name — special char error -->
+        <!-- Template Name — two error states stacked for illustration -->
         <div class="fg">
           <label class="fg-lbl req">Template Name</label>
+          <!-- Error state 1: duplicate name -->
           <input class="inp has-err" type="text"
-                 value="East Group #Internet &amp; Mobile Bundle" readonly />
+                 value="East Group Internet + Mobile Bundle" readonly />
+          <div class="im err show" style="margin-top:4px">
+            <em class="im-icon">⊘</em>
+            <span>A template named <strong>"East Group Internet + Mobile Bundle"</strong> already exists.
+            Please choose a unique name.</span>
+          </div>
+          <div class="char-ctr">38 / 80</div>
+        </div>
+        <!-- Error state 2: special chars (shown separately below for reference) -->
+        <div class="fg">
+          <label class="fg-lbl req">Template Name <span style="font-weight:400;color:#706e6b;font-size:11px">(special-char error example)</span></label>
+          <input class="inp has-err" type="text"
+                 value="East Group #Internet &amp; Mobile" readonly />
           <div class="im err show" style="margin-top:4px">
             <em class="im-icon">⊘</em>
             <span>Template Name cannot contain special characters.
             Only letters, numbers, spaces, hyphens ( - ) and underscores ( _ ) are allowed.</span>
           </div>
-          <div class="char-ctr">39 / 80</div>
+          <div class="char-ctr">32 / 80</div>
         </div>
 
         <!-- Description -->
@@ -550,7 +564,7 @@ table.spec td:first-child { font-weight: 700; color: var(--sf-text); width: 150p
           </thead>
           <tbody>
             <tr>
-              <td rowspan="3">Template Name</td>
+              <td rowspan="4">Template Name</td>
               <td>Required</td>
               <td><strong>Blocking.</strong> Field cannot be empty. Save button disabled until a value is entered.</td>
             </tr>
@@ -565,10 +579,22 @@ table.spec td:first-child { font-weight: 700; color: var(--sf-text); width: 150p
               red when exceeded. Save button disabled.</td>
             </tr>
             <tr>
+              <td>Validation — duplicate name</td>
+              <td><strong>Blocking.</strong> Checked live as user types, case-insensitive, against existing
+              <span class="spec-code">SalesConfigTemplate__c</span> records.
+              Show red error: "A template named '[name]' already exists. Please choose a unique name."
+              Save disabled. When editing an existing template, the check must <em>exclude the current record</em>
+              (i.e. re-saving with the same name is allowed).</td>
+            </tr>
+            <tr>
               <td rowspan="4">Category</td>
               <td>Data model</td>
               <td>Text field on <span class="spec-code">SalesConfigTemplate__c</span>.
-              Not a lookup — value is stored as a plain string.</td>
+              Not a separate object — value is a plain string stored directly on the template record.
+              Combobox options are the <strong>distinct Category values queried from existing
+              <span class="spec-code">SalesConfigTemplate__c</span> records</strong>
+              (i.e. <code>SELECT Category__c FROM SalesConfigTemplate__c GROUP BY Category__c</code>).
+              No separate Category object exists.</td>
             </tr>
             <tr>
               <td>UI pattern</td>
@@ -619,17 +645,19 @@ table.spec td:first-child { font-weight: 700; color: var(--sf-text); width: 150p
               the existing record." User can still select it; no duplicate record is created.</td>
             </tr>
             <tr>
-              <td rowspan="2">Duplicate category</td>
-              <td>Existing category</td>
-              <td><strong>Non-blocking.</strong> If typed category name exactly matches one already in use
-              by another template (case-insensitive), show blue info message:
-              "This category already exists — selecting it will group this template under the same category."
-              User can proceed; same string is stored, no secondary object created.</td>
+              <td rowspan="2">Selecting existing category</td>
+              <td>Info — non-blocking</td>
+              <td>When the user selects an existing category from the dropdown (or types a name that
+              exactly matches one), show a blue info message:
+              "This category already exists — selecting it groups this template with others in the same category."
+              This is the <em>expected</em> behaviour — no warning needed, no duplicate is created.
+              The same string is stored on the new template record.</td>
             </tr>
             <tr>
-              <td>In-session duplicate</td>
-              <td>If user clears the selected category chip and types the same name again,
-              the combobox treats it identically to the first selection. No separate state needed.</td>
+              <td>Creating a new category</td>
+              <td>When the user types a name not present in any existing template and chooses
+              "+ Create '[name]'", the string is stored as-is on the new template.
+              It will appear as an option in the combobox for future templates automatically.</td>
             </tr>
             <tr>
               <td>Save button</td>
@@ -647,7 +675,20 @@ table.spec td:first-child { font-weight: 700; color: var(--sf-text); width: 150p
 
 <script>
 /* ── Simulated existing data ─────────────────────────────────── */
-const CATS = ['Enterprise', 'SMB', 'Public Sector', 'Healthcare', 'Retail', 'Government', 'Wholesale'];
+// EXISTING_TEMPLATES: simulates SalesConfigTemplate__c records already saved
+// - Name uniqueness check runs against this list
+// - CATS is derived from distinct Category__c values across these records
+const EXISTING_TEMPLATES = [
+  { name: 'East Group Internet + Mobile Bundle', category: 'Enterprise' },
+  { name: 'NHS Broadband Renewal Pack',          category: 'Public Sector' },
+  { name: 'SMB Starter Bundle',                  category: 'SMB' },
+  { name: 'Retail Data Centre Connect',          category: 'Retail' },
+  { name: 'Government Fibre + Voice',            category: 'Government' },
+  { name: 'Healthcare Priority Link',            category: 'Healthcare' },
+  { name: 'Wholesale Backbone Q4',               category: 'Wholesale' },
+];
+// Distinct Category values derived from existing templates (simulates SOQL GROUP BY)
+const CATS = [...new Set(EXISTING_TEMPLATES.map(t => t.category).filter(Boolean))];
 const TAGS = ['enterprise','strategic-account','renewal','q4-priority','mobile-only',
               'broadband','data-centre','government','fast-track','upsell','nbd'];
 
@@ -713,6 +754,14 @@ function tplNameValidate(inp) {
   if (v.length > MAX_NAME) {
     inp.classList.add('has-err');
     showMsg(msg, 'err', '⊘', `Template Name must be ${MAX_NAME} characters or fewer.`);
+    updateSave(false); return;
+  }
+  // Duplicate name check — case-insensitive match against existing templates
+  const dupe = EXISTING_TEMPLATES.find(t => t.name.toLowerCase() === v.trim().toLowerCase());
+  if (dupe) {
+    inp.classList.add('has-err');
+    showMsg(msg, 'err', '⊘',
+      `A template named <strong>"${esc(dupe.name)}"</strong> already exists. Please choose a unique name.`);
     updateSave(false); return;
   }
   msg.className = 'im';
