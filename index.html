@@ -324,11 +324,11 @@ table.spec td:first-child { font-weight: 700; color: var(--sf-text); width: 150p
   ══════════════════════════════════════════════════════════════ -->
   <div id="sA" class="scene on">
     <div class="dnote">
-      <strong>Interactive mock</strong> — Category and Tags fields are live.
-      Try typing <code>Ent</code> in Category to see existing matches.
-      Type a name not in the list (e.g. <code>Logistics</code>) to see the Create option.
-      Type an exact match (e.g. <code>Enterprise</code>) to see the duplicate warning.
-      For Tags, type <code>ren</code> to find <em>renewal</em>, or <code>abc</code> to create a new tag.
+      <strong>Interactive mock</strong> — Template Name, Category, and Tags fields are live.
+      Template Name: max 80 chars, no special characters — try typing <code>Launch @2024</code> to see the error.
+      Category: type <code>Ent</code> to see existing matches, <code>Logistics</code> for the Create option,
+      or <code>Enterprise</code> to see the duplicate info.
+      Tags: type <code>ren</code> to find <em>renewal</em>, or <code>abc</code> to create a new tag.
     </div>
 
     <div class="modal" id="modalA">
@@ -344,7 +344,10 @@ table.spec td:first-child { font-weight: 700; color: var(--sf-text); width: 150p
           <label class="fg-lbl req" for="tplName">Template Name</label>
           <input id="tplName" class="inp" type="text"
                  value="East Group Internet + Mobile Bundle"
-                 placeholder="Enter a template name" />
+                 placeholder="Enter a template name"
+                 oninput="tplNameValidate(this)" />
+          <div id="tplNameMsg" class="im"></div>
+          <div id="tplNameCtr" class="char-ctr" style="display:none"></div>
         </div>
 
         <!-- Description -->
@@ -440,10 +443,17 @@ table.spec td:first-child { font-weight: 700; color: var(--sf-text); width: 150p
 
       <div class="modal-body">
 
-        <!-- Template Name -->
+        <!-- Template Name — special char error -->
         <div class="fg">
           <label class="fg-lbl req">Template Name</label>
-          <input class="inp" type="text" value="East Group Internet + Mobile Bundle" />
+          <input class="inp has-err" type="text"
+                 value="East Group #Internet &amp; Mobile Bundle" readonly />
+          <div class="im err show" style="margin-top:4px">
+            <em class="im-icon">⊘</em>
+            <span>Template Name cannot contain special characters.
+            Only letters, numbers, spaces, hyphens ( - ) and underscores ( _ ) are allowed.</span>
+          </div>
+          <div class="char-ctr">39 / 80</div>
         </div>
 
         <!-- Description -->
@@ -540,6 +550,21 @@ table.spec td:first-child { font-weight: 700; color: var(--sf-text); width: 150p
           </thead>
           <tbody>
             <tr>
+              <td rowspan="3">Template Name</td>
+              <td>Required</td>
+              <td><strong>Blocking.</strong> Field cannot be empty. Save button disabled until a value is entered.</td>
+            </tr>
+            <tr>
+              <td>Validation — special chars</td>
+              <td><strong>Blocking.</strong> Only <code>a–z A–Z 0–9 space - _</code> allowed.
+              Show red error inline. Save button disabled.</td>
+            </tr>
+            <tr>
+              <td>Validation — max length</td>
+              <td><strong>Blocking.</strong> Max 80 chars. Character counter shown; turns amber at 68+,
+              red when exceeded. Save button disabled.</td>
+            </tr>
+            <tr>
               <td rowspan="4">Category</td>
               <td>Data model</td>
               <td>Text field on <span class="spec-code">SalesConfigTemplate__c</span>.
@@ -626,8 +651,9 @@ const CATS = ['Enterprise', 'SMB', 'Public Sector', 'Healthcare', 'Retail', 'Gov
 const TAGS = ['enterprise','strategic-account','renewal','q4-priority','mobile-only',
               'broadband','data-centre','government','fast-track','upsell','nbd'];
 
-const MAX_CAT = 255;
-const MAX_TAG = 80;
+const MAX_CAT  = 255;
+const MAX_TAG  = 80;
+const MAX_NAME = 80;
 const SPECIAL  = /[^a-zA-Z0-9 \-_]/;
 
 /* ── State ───────────────────────────────────────────────────── */
@@ -655,6 +681,42 @@ function showTab(id, btn) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('on'));
   document.getElementById(id).classList.add('on');
   btn.classList.add('on');
+}
+
+/* ══════════════════════════════════════════════════════════════
+   TEMPLATE NAME VALIDATION
+══════════════════════════════════════════════════════════════ */
+function tplNameValidate(inp) {
+  const v   = inp.value;
+  const msg = document.getElementById('tplNameMsg');
+  const ctr = document.getElementById('tplNameCtr');
+
+  // character counter
+  if (v.length > 0) {
+    ctr.style.display = 'block';
+    ctr.textContent   = `${v.length} / ${MAX_NAME}`;
+    ctr.className     = 'char-ctr' + (v.length > MAX_NAME ? ' over' : v.length >= 68 ? ' near' : '');
+  } else {
+    ctr.style.display = 'none';
+  }
+
+  inp.classList.remove('has-err');
+  if (!v) { msg.className = 'im'; updateSave(); return; }
+
+  if (SPECIAL.test(v)) {
+    inp.classList.add('has-err');
+    showMsg(msg, 'err', '⊘',
+      'Template Name cannot contain special characters. '
+      + 'Only letters, numbers, spaces, hyphens ( - ) and underscores ( _ ) are allowed.');
+    updateSave(false); return;
+  }
+  if (v.length > MAX_NAME) {
+    inp.classList.add('has-err');
+    showMsg(msg, 'err', '⊘', `Template Name must be ${MAX_NAME} characters or fewer.`);
+    updateSave(false); return;
+  }
+  msg.className = 'im';
+  updateSave();
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -936,19 +998,20 @@ function showMsg(el, type, icon, html) {
 }
 
 function hasBlockingError() {
-  const catMsg = document.getElementById('catMsg');
-  const tagMsg = document.getElementById('tagMsg');
-  const catInp = document.getElementById('catInput');
-  const tagInp = document.getElementById('tagInput');
-  const tplName = document.getElementById('tplName');
+  const catMsg     = document.getElementById('catMsg');
+  const tagMsg     = document.getElementById('tagMsg');
+  const tplNameMsg = document.getElementById('tplNameMsg');
+  const catInp     = document.getElementById('catInput');
+  const tagInp     = document.getElementById('tagInput');
+  const tplName    = document.getElementById('tplName');
   if (!catMsg || !tagMsg) return false;
-  const catErr = catMsg.classList.contains('err');
-  const tagErr = tagMsg.classList.contains('err');
-  // also block if text is currently in the tag input with error
+  const catErr     = catMsg.classList.contains('err');
+  const tagErr     = tagMsg.classList.contains('err');
+  const nameErr    = tplNameMsg && tplNameMsg.classList.contains('err');
   const tagInpOverflow = tagInp && tagInp.value.length > MAX_TAG;
   const catInpOverflow = catInp && catInp.value.length > MAX_CAT;
-  const nameEmpty = tplName && !tplName.value.trim();
-  return catErr || tagErr || tagInpOverflow || catInpOverflow || nameEmpty;
+  const nameEmpty  = tplName && !tplName.value.trim();
+  return catErr || tagErr || nameErr || tagInpOverflow || catInpOverflow || nameEmpty;
 }
 
 function updateSave(forceDisable) {
