@@ -344,7 +344,7 @@ table.spec td:first-child { font-weight: 700; color: var(--sf-text); width: 150p
         <div class="fg">
           <label class="fg-lbl req" for="tplName">Template Name</label>
           <input id="tplName" class="inp" type="text"
-                 value="East Group Internet + Mobile Bundle"
+                 value="East Group Internet and Mobile Bundle"
                  placeholder="Enter a template name"
                  oninput="tplNameValidate(this)" />
           <div id="tplNameMsg" class="im"></div>
@@ -449,10 +449,10 @@ table.spec td:first-child { font-weight: 700; color: var(--sf-text); width: 150p
           <label class="fg-lbl req">Template Name</label>
           <!-- Error state 1: duplicate name -->
           <input class="inp has-err" type="text"
-                 value="East Group Internet + Mobile Bundle" readonly />
+                 value="East Group Internet and Mobile Bundle" readonly />
           <div class="im err show" style="margin-top:4px">
             <em class="im-icon">⊘</em>
-            <span>A template named <strong>"East Group Internet + Mobile Bundle"</strong> already exists.
+            <span>A template named <strong>"East Group Internet and Mobile Bundle"</strong> already exists.
             Please choose a unique name.</span>
           </div>
           <div class="char-ctr">38 / 80</div>
@@ -679,7 +679,7 @@ table.spec td:first-child { font-weight: 700; color: var(--sf-text); width: 150p
 // - Name uniqueness check runs against this list
 // - CATS is derived from distinct Category__c values across these records
 const EXISTING_TEMPLATES = [
-  { name: 'East Group Internet + Mobile Bundle', category: 'Enterprise' },
+  { name: 'East Group Internet and Mobile Bundle', category: 'Enterprise' },
   { name: 'NHS Broadband Renewal Pack',          category: 'Public Sector' },
   { name: 'SMB Starter Bundle',                  category: 'SMB' },
   { name: 'Retail Data Centre Connect',          category: 'Retail' },
