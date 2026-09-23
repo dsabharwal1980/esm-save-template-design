@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>ESM — Save as Cart Template · Revised Design</title>
+<style>
+/* ── Variables ─────────────────────────────────────────────── */
+:root {
+  --sf-blue:        #0176d3;
+  --sf-blue-dk:     #0161b0;
+  --sf-blue-tint:   #e5f0f9;
+  --sf-border:      #dddbda;
+  --sf-border-2:    #e8e8e8;
+  --sf-bg:          #f3f3f3;
+  --sf-text:        #181818;
+  --sf-text-2:      #444;
+  --sf-muted:       #706e6b;
+  --sf-red:         #ba0517;
+  --sf-red-tint:    #fde8ea;
+  --sf-amber:       #a86403;
+  --sf-amber-tint:  #fef3e2;
+  --sf-amber-bdr:   #f5c96e;
+  --sf-green:       #2e844a;
+  --sf-green-tint:  #e9f5eb;
+  --sf-green-bdr:   #b0d9ba;
+  --shadow-modal:   0 8px 40px rgba(0,0,0,.28);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Salesforce Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 13px;
+  background: #1e1e1e;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px 16px 40px;
+  user-select: text;
+}
+/* ── Page nav ──────────────────────────────────────────────── */
+.page-wrap { width: 580px; max-width: 98vw; }
+.page-title {
+  color: rgba(255,255,255,.55);
+  font-size: 11px; letter-spacing: .5px; text-transform: uppercase;
+  font-weight: 700; margin-bottom: 10px; text-align: center;
+}
+.tab-nav {
+  display: flex; gap: 3px;
+  background: rgba(255,255,255,.08);
+  border-radius: 6px; padding: 4px; margin-bottom: 18px;
+}
+.tab-btn {
+  flex: 1; padding: 6px 4px;
+  background: none; border: none; cursor: pointer;
+  color: rgba(255,255,255,.6); font-size: 11.5px; font-weight: 600;
+  border-radius: 4px; font-family: inherit;
+  transition: background .12s, color .12s;
+  white-space: nowrap;
+}
+.tab-btn.on { background: #fff; color: var(--sf-blue); }
+.tab-btn:hover:not(.on) { background: rgba(255,255,255,.15); color: #fff; }
+.scene { display: none; }
+.scene.on { display: block; }
+
+/* ── Design note (caption above modal) ──────────────────────── */
+.dnote {
+  background: rgba(255,255,255,.07);
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 6px;
+  padding: 10px 14px;
+  color: rgba(255,255,255,.7);
+  font-size: 12px;
+  line-height: 1.55;
+  margin-bottom: 14px;
+}
+.dnote strong { color: #fff; }
+.dnote code {
+  background: rgba(255,255,255,.12); border-radius: 3px;
+  padding: 1px 5px; font-size: 11px;
+}
+
+/* ── Modal ──────────────────────────────────────────────────── */
+.modal {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: var(--shadow-modal);
+  width: 100%;
+  overflow: visible;
+}
+.modal-hdr {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 15px 20px;
+  border-bottom: 1px solid var(--sf-border);
+}
+.modal-hdr h2 { font-size: 15px; font-weight: 700; color: var(--sf-text); }
+.btn-x {
+  background: none; border: none; cursor: pointer;
+  font-size: 18px; color: var(--sf-muted); line-height: 1; padding: 0 2px;
+}
+.btn-x:hover { color: var(--sf-text); }
+.modal-body { padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+.modal-ftr {
+  padding: 13px 20px;
+  border-top: 1px solid var(--sf-border);
+  display: flex; justify-content: flex-end; gap: 8px;
+}
+
+/* ── Field group ────────────────────────────────────────────── */
+.fg { display: flex; flex-direction: column; gap: 5px; }
+.fg-lbl {
+  font-size: 12px; font-weight: 700; color: var(--sf-text);
+}
+.fg-lbl.req::before { content: '* '; color: var(--sf-red); }
+.fg-helper { font-size: 11px; color: var(--sf-muted); margin-top: -2px; }
+
+/* ── Inputs ─────────────────────────────────────────────────── */
+.inp {
+  width: 100%; padding: 8px 12px;
+  border: 1px solid var(--sf-border); border-radius: 4px;
+  font-size: 13px; color: var(--sf-text); font-family: inherit;
+  outline: none; transition: border-color .15s;
+  background: #fff;
+}
+.inp:focus { border-color: var(--sf-blue); box-shadow: 0 0 0 2px rgba(1,118,211,.15); }
+.inp.has-err { border-color: var(--sf-red); }
+textarea.inp { resize: vertical; min-height: 68px; }
+
+/* ── Combobox ───────────────────────────────────────────────── */
+.cb-wrap { position: relative; }
+.cb-inp-row { position: relative; }
+.cb-inp {
+  width: 100%; padding: 8px 30px 8px 12px;
+  border: 1px solid var(--sf-border); border-radius: 4px;
+  font-size: 13px; color: var(--sf-text); font-family: inherit;
+  outline: none; transition: border-color .15s; background: #fff;
+  cursor: text;
+}
+.cb-inp:focus { border-color: var(--sf-blue); box-shadow: 0 0 0 2px rgba(1,118,211,.15); }
+.cb-inp.has-err { border-color: var(--sf-red); }
+.cb-arrow {
+  position: absolute; right: 10px; top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none; color: var(--sf-muted); font-size: 11px;
+}
+/* dropdown */
+.cb-dd {
+  display: none;
+  position: absolute; top: calc(100% + 3px);
+  left: 0; right: 0;
+  background: #fff;
+  border: 1px solid #c5c5c5;
+  border-radius: 4px;
+  box-shadow: 0 4px 18px rgba(0,0,0,.18);
+  z-index: 999;
+  max-height: 210px; overflow-y: auto;
+}
+.cb-dd.open { display: block; }
+.cb-sec {
+  padding: 7px 10px 3px;
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .4px; color: var(--sf-muted);
+}
+.cb-opt {
+  padding: 8px 12px; font-size: 13px; cursor: pointer;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 8px; color: var(--sf-text);
+}
+.cb-opt:hover, .cb-opt:focus { background: var(--sf-blue-tint); outline: none; }
+.cb-opt.hi { background: #eaf1fb; }
+.opt-name { flex: 1; min-width: 0; }
+.opt-hi { font-weight: 700; color: var(--sf-blue); }
+.opt-badge {
+  font-size: 10px; padding: 1px 6px; border-radius: 10px;
+  font-weight: 600; flex-shrink: 0; border: 1px solid;
+}
+.badge-ex  { background: #f3f3f3; color: var(--sf-muted); border-color: #ccc; }
+.badge-new { background: var(--sf-green-tint); color: var(--sf-green); border-color: var(--sf-green-bdr); }
+.cb-create {
+  padding: 8px 12px; font-size: 13px; cursor: pointer;
+  color: var(--sf-blue); font-weight: 600;
+  border-top: 1px solid var(--sf-border-2);
+  display: flex; align-items: center; gap: 6px;
+}
+.cb-create:hover { background: var(--sf-blue-tint); }
+.cb-create-icon { font-size: 15px; line-height: 1; }
+.cb-empty {
+  padding: 10px 12px; font-size: 13px;
+  color: var(--sf-muted); font-style: italic;
+}
+.cb-divider { border: none; border-top: 1px solid var(--sf-border-2); margin: 3px 0; }
+
+/* ── Selected category chip ──────────────────────────────────── */
+.cat-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 10px; border-radius: 4px; font-size: 12px; font-weight: 600;
+  margin-top: 2px; border: 1px solid;
+}
+.cat-chip.is-ex   { background: var(--sf-blue-tint); color: var(--sf-blue-dk); border-color: #a6caed; }
+.cat-chip.is-new  { background: var(--sf-green-tint); color: var(--sf-green); border-color: var(--sf-green-bdr); }
+.chip-badge { font-size: 10px; opacity: .75; }
+.chip-rm {
+  background: none; border: none; cursor: pointer;
+  font-size: 15px; line-height: 1; padding: 0; color: inherit; opacity: .65;
+}
+.chip-rm:hover { opacity: 1; }
+
+/* ── Inline messages ─────────────────────────────────────────── */
+.im {
+  display: none; font-size: 12px; padding: 7px 10px;
+  border-radius: 4px; align-items: flex-start; gap: 7px;
+  margin-top: 2px; line-height: 1.45;
+}
+.im.show { display: flex; }
+.im.info { background: var(--sf-blue-tint);  color: #032e61;       border: 1px solid #a6caed; }
+.im.warn { background: var(--sf-amber-tint); color: var(--sf-amber); border: 1px solid var(--sf-amber-bdr); }
+.im.err  { background: var(--sf-red-tint);   color: var(--sf-red);  border: 1px solid #f4a8b0; }
+.im-icon { flex-shrink: 0; font-style: normal; }
+
+/* ── Character counter ───────────────────────────────────────── */
+.char-ctr {
+  font-size: 11px; color: var(--sf-muted); text-align: right; margin-top: 2px;
+}
+.char-ctr.near { color: var(--sf-amber); font-weight: 600; }
+.char-ctr.over { color: var(--sf-red);   font-weight: 700; }
+
+/* ── Tag pills ───────────────────────────────────────────────── */
+.tag-pills { display: flex; flex-wrap: wrap; gap: 5px; }
+.tag-pill {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 8px 3px 10px; border-radius: 12px;
+  font-size: 12px; font-weight: 500; border: 1px solid;
+}
+.tp-ex  { background: #f3f3f3; color: var(--sf-text-2); border-color: #c9c7c5; }
+.tp-new { background: var(--sf-green-tint); color: var(--sf-green); border-color: var(--sf-green-bdr); }
+.tp-new-badge { font-size: 9px; font-weight: 700; opacity: .65; }
+.tp-rm {
+  background: none; border: none; cursor: pointer;
+  font-size: 14px; line-height: 1; padding: 0;
+  color: inherit; opacity: .55; margin-left: 2px;
+}
+.tp-rm:hover { opacity: 1; }
+
+/* ── Info callout ────────────────────────────────────────────── */
+.callout {
+  background: var(--sf-bg); border: 1px solid var(--sf-border-2);
+  border-radius: 4px; padding: 10px 12px;
+  font-size: 12px; color: var(--sf-muted);
+  display: flex; gap: 8px; align-items: flex-start;
+  line-height: 1.5;
+}
+.callout-icon { font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+
+/* ── Buttons ─────────────────────────────────────────────────── */
+.btn {
+  padding: 8px 18px; border-radius: 4px;
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  font-family: inherit; transition: background .12s, border-color .12s;
+}
+.btn-ghost {
+  background: #fff; border: 1px solid var(--sf-border);
+  color: var(--sf-text-2);
+}
+.btn-ghost:hover { background: var(--sf-bg); }
+.btn-primary {
+  background: var(--sf-blue); border: 1px solid var(--sf-blue); color: #fff;
+}
+.btn-primary:hover { background: var(--sf-blue-dk); border-color: var(--sf-blue-dk); }
+.btn-primary:disabled {
+  background: #c9c7c5; border-color: #c9c7c5; cursor: not-allowed; color: #fff;
+}
+
+/* ── Design spec table (Scene C) ─────────────────────────────── */
+.spec-wrap { background: #fff; border-radius: 8px; overflow: hidden; box-shadow: var(--shadow-modal); }
+.spec-hdr {
+  padding: 14px 20px; border-bottom: 1px solid var(--sf-border);
+}
+.spec-hdr h2 { font-size: 14px; font-weight: 700; color: var(--sf-text); }
+.spec-body { padding: 0; }
+table.spec {
+  width: 100%; border-collapse: collapse; font-size: 12px;
+}
+table.spec th {
+  padding: 8px 14px; background: var(--sf-bg);
+  font-weight: 700; color: var(--sf-muted); text-align: left;
+  border-bottom: 1px solid var(--sf-border);
+  font-size: 11px; text-transform: uppercase; letter-spacing: .4px;
+}
+table.spec td {
+  padding: 9px 14px; border-bottom: 1px solid var(--sf-border-2);
+  color: var(--sf-text-2); vertical-align: top; line-height: 1.5;
+}
+table.spec tr:last-child td { border-bottom: none; }
+table.spec td:first-child { font-weight: 700; color: var(--sf-text); width: 150px; }
+.spec-code {
+  background: #f3f3f3; border-radius: 3px;
+  padding: 1px 5px; font-family: monospace; font-size: 11px; color: #444;
+}
+.spec-tag-ex  { display: inline-block; background: #f3f3f3; border: 1px solid #ccc; border-radius: 10px; padding: 1px 7px; font-size: 11px; }
+.spec-tag-new { display: inline-block; background: var(--sf-green-tint); border: 1px solid var(--sf-green-bdr); color: var(--sf-green); border-radius: 10px; padding: 1px 7px; font-size: 11px; font-weight: 600; }
+
+/* ── Validation banner (pre-filled state) ─────────────────────── */
+.vbanner {
+  display: flex; gap: 8px; align-items: flex-start;
+  background: var(--sf-red-tint); border: 1px solid #f4a8b0;
+  border-radius: 4px; padding: 9px 12px;
+  font-size: 12px; color: var(--sf-red); line-height: 1.5;
+}
+</style>
+</head>
+<body>
+
+<div class="page-wrap">
+
+  <p class="page-title">ESM · Save as Cart Template · Revised Design</p>
+
+  <div class="tab-nav">
+    <button class="tab-btn on"  onclick="showTab('sA',this)">A · Live form</button>
+    <button class="tab-btn"     onclick="showTab('sB',this)">B · Validation errors</button>
+    <button class="tab-btn"     onclick="showTab('sC',this)">C · Design spec</button>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       SCENE A — Fully interactive form
+  ══════════════════════════════════════════════════════════════ -->
+  <div id="sA" class="scene on">
+    <div class="dnote">
+      <strong>Interactive mock</strong> — Category and Tags fields are live.
+      Try typing <code>Ent</code> in Category to see existing matches.
+      Type a name not in the list (e.g. <code>Logistics</code>) to see the Create option.
+      Type an exact match (e.g. <code>Enterprise</code>) to see the duplicate warning.
+      For Tags, type <code>ren</code> to find <em>renewal</em>, or <code>abc</code> to create a new tag.
+    </div>
+
+    <div class="modal" id="modalA">
+      <div class="modal-hdr">
+        <h2>Save as Cart Template</h2>
+        <button class="btn-x" title="Close">✕</button>
+      </div>
+
+      <div class="modal-body">
+
+        <!-- Template Name -->
+        <div class="fg">
+          <label class="fg-lbl req" for="tplName">Template Name</label>
+          <input id="tplName" class="inp" type="text"
+                 value="East Group Internet + Mobile Bundle"
+                 placeholder="Enter a template name" />
+        </div>
+
+        <!-- Description -->
+        <div class="fg">
+          <label class="fg-lbl" for="tplDesc">Description</label>
+          <textarea id="tplDesc" class="inp" rows="3"
+                    placeholder="Optional description of this template">Bundles East Group's core internet and mobile products used in Q3 renewal cycles.</textarea>
+        </div>
+
+        <!-- Category combobox -->
+        <div class="fg">
+          <label class="fg-lbl" for="catInput">Category</label>
+          <p class="fg-helper">Search an existing category or type a new name to create one.</p>
+
+          <div class="cb-wrap" id="catWrap">
+            <div class="cb-inp-row">
+              <input id="catInput" class="cb-inp" type="text"
+                     autocomplete="off" spellcheck="false"
+                     placeholder="Search or create a category…"
+                     oninput="catOnInput(this)"
+                     onfocus="catOnFocus()"
+                     onkeydown="catOnKey(event)" />
+              <span class="cb-arrow">▾</span>
+            </div>
+            <div id="catDd" class="cb-dd" role="listbox"></div>
+            <!-- Selected chip appears here -->
+            <div id="catChip" style="display:none"></div>
+            <!-- Inline message -->
+            <div id="catMsg" class="im"></div>
+            <!-- Char counter -->
+            <div id="catCtr" class="char-ctr" style="display:none"></div>
+          </div>
+        </div>
+
+        <!-- Tags combobox -->
+        <div class="fg">
+          <label class="fg-lbl" for="tagInput">Tags</label>
+          <p class="fg-helper">Search existing tags or type a new name to create one. Multiple tags allowed.</p>
+
+          <div id="tagPills" class="tag-pills">
+            <!-- pre-filled pills rendered by JS on init -->
+          </div>
+
+          <div class="cb-wrap" id="tagWrap" style="margin-top:6px">
+            <div class="cb-inp-row">
+              <input id="tagInput" class="cb-inp" type="text"
+                     autocomplete="off" spellcheck="false"
+                     placeholder="Search or create a tag…"
+                     oninput="tagOnInput(this)"
+                     onfocus="tagOnFocus()"
+                     onkeydown="tagOnKey(event)" />
+              <span class="cb-arrow">▾</span>
+            </div>
+            <div id="tagDd" class="cb-dd" role="listbox"></div>
+            <div id="tagMsg" class="im"></div>
+            <div id="tagCtr" class="char-ctr" style="display:none"></div>
+          </div>
+        </div>
+
+        <!-- Info callout -->
+        <div class="callout">
+          <span class="callout-icon">ℹ</span>
+          <span>All <strong>6 products</strong> in the current working cart will be saved as a reusable template.
+          Team members with access to this template can apply it to new quotes.</span>
+        </div>
+
+      </div><!-- /modal-body -->
+
+      <div class="modal-ftr">
+        <button class="btn btn-ghost" onclick="return false">Cancel</button>
+        <button id="saveBtn" class="btn btn-primary" onclick="return false">Save Template</button>
+      </div>
+    </div><!-- /modal -->
+  </div><!-- /sA -->
+
+
+  <!-- ══════════════════════════════════════════════════════════
+       SCENE B — Pre-filled with validation errors
+  ══════════════════════════════════════════════════════════════ -->
+  <div id="sB" class="scene">
+    <div class="dnote">
+      <strong>Validation error states</strong> — this scene shows how the UI surfaces
+      constraint violations for Category and Tag fields.
+      Errors are <em>non-blocking</em> for the duplicate-name warning
+      but <em>blocking</em> for special characters and exceeded length.
+    </div>
+
+    <div class="modal">
+      <div class="modal-hdr">
+        <h2>Save as Cart Template</h2>
+        <button class="btn-x" title="Close">✕</button>
+      </div>
+
+      <div class="modal-body">
+
+        <!-- Template Name -->
+        <div class="fg">
+          <label class="fg-lbl req">Template Name</label>
+          <input class="inp" type="text" value="East Group Internet + Mobile Bundle" />
+        </div>
+
+        <!-- Description -->
+        <div class="fg">
+          <label class="fg-lbl">Description</label>
+          <textarea class="inp" rows="2">Bundles East Group's core internet and mobile products.</textarea>
+        </div>
+
+        <!-- Category — special char error -->
+        <div class="fg">
+          <label class="fg-lbl">Category</label>
+          <p class="fg-helper">Search an existing category or type a new name to create one.</p>
+          <div class="cb-wrap">
+            <div class="cb-inp-row">
+              <input class="cb-inp has-err" type="text"
+                     value="Enterprise @2024" readonly />
+              <span class="cb-arrow">▾</span>
+            </div>
+            <div class="im err show" style="margin-top:4px">
+              <em class="im-icon">⊘</em>
+              <span>Category name cannot contain special characters.
+              Only letters, numbers, spaces, hyphens ( - ) and underscores ( _ ) are allowed.</span>
+            </div>
+            <div class="char-ctr">14 / 255</div>
+          </div>
+        </div>
+
+        <!-- Tags — duplicate warning + length error -->
+        <div class="fg">
+          <label class="fg-lbl">Tags</label>
+          <p class="fg-helper">Search existing tags or type a new name to create one.</p>
+
+          <div class="tag-pills">
+            <span class="tag-pill tp-ex">enterprise <button class="tp-rm">✕</button></span>
+            <span class="tag-pill tp-ex">strategic-account <button class="tp-rm">✕</button></span>
+            <span class="tag-pill tp-new">q4-2024-digital-renewal-programme <span class="tp-new-badge">NEW</span><button class="tp-rm">✕</button></span>
+          </div>
+
+          <div class="cb-wrap" style="margin-top:6px">
+            <div class="cb-inp-row">
+              <input class="cb-inp has-err" type="text"
+                     value="renewal-campaign-emea-broadband-q4-enterprise-2024-priority-fast-track-boost" readonly />
+              <span class="cb-arrow">▾</span>
+            </div>
+            <!-- Length exceeded -->
+            <div class="im err show" style="margin-top:4px">
+              <em class="im-icon">⊘</em>
+              <span>Tag name must be 80 characters or fewer. Current length: <strong>73 characters</strong>.</span>
+            </div>
+            <div class="char-ctr over">73 / 80</div>
+          </div>
+
+          <!-- Duplicate warning (non-blocking) — appears separately -->
+          <div class="im warn show" style="margin-top:6px">
+            <em class="im-icon">⚠</em>
+            <span>A tag named <strong>"enterprise"</strong> already exists in the system.
+            Selecting it will link to the existing tag record — no duplicate will be created.</span>
+          </div>
+        </div>
+
+        <!-- Info callout -->
+        <div class="callout">
+          <span class="callout-icon">ℹ</span>
+          <span>All <strong>6 products</strong> in the current working cart will be saved as a reusable template.</span>
+        </div>
+
+      </div><!-- /modal-body -->
+
+      <div class="modal-ftr">
+        <button class="btn btn-ghost">Cancel</button>
+        <button class="btn btn-primary" disabled>Save Template</button>
+      </div>
+    </div>
+  </div><!-- /sB -->
+
+
+  <!-- ══════════════════════════════════════════════════════════
+       SCENE C — Design spec
+  ══════════════════════════════════════════════════════════════ -->
+  <div id="sC" class="scene">
+    <div class="dnote">
+      <strong>Design rules</strong> — field-level constraints, validation severity, and data model notes.
+    </div>
+    <div class="spec-wrap">
+      <div class="spec-hdr"><h2>Field specifications</h2></div>
+      <div class="spec-body">
+        <table class="spec">
+          <thead>
+            <tr>
+              <th>Field</th>
+              <th>Rule</th>
+              <th>Behaviour</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td rowspan="4">Category</td>
+              <td>Data model</td>
+              <td>Text field on <span class="spec-code">SalesConfigTemplate__c</span>.
+              Not a lookup — value is stored as a plain string.</td>
+            </tr>
+            <tr>
+              <td>UI pattern</td>
+              <td>Combobox — user types to filter existing categories from other templates, or types a new name.
+              Existing options show <span class="spec-tag-ex">Existing</span> badge.
+              New values show <span class="spec-tag-new">New</span> badge on the chip after selection.</td>
+            </tr>
+            <tr>
+              <td>Validation — special chars</td>
+              <td><strong>Blocking.</strong> Only <code>a–z A–Z 0–9 space - _</code> allowed.
+              Show red error inline. Save button disabled.</td>
+            </tr>
+            <tr>
+              <td>Validation — max length</td>
+              <td><strong>Blocking.</strong> Max 255 chars. Character counter shown; turns red when exceeded.
+              Save button disabled.</td>
+            </tr>
+            <tr>
+              <td rowspan="5">Tags</td>
+              <td>Data model</td>
+              <td>Tags are stored in <span class="spec-code">SalesConfigTemplateTag__c</span>.
+              The link to a template is a separate junction object
+              <span class="spec-code">SalesConfigTemplateTagLink__c</span>.</td>
+            </tr>
+            <tr>
+              <td>UI pattern</td>
+              <td>Multi-select combobox. User types to search existing
+              <span class="spec-code">SalesConfigTemplateTag__c</span> records.
+              Selecting an existing tag creates a <span class="spec-code">SalesConfigTemplateTagLink__c</span>
+              record on save. Creating a new tag inserts a new
+              <span class="spec-code">SalesConfigTemplateTag__c</span> + link on save.</td>
+            </tr>
+            <tr>
+              <td>Validation — special chars</td>
+              <td><strong>Blocking.</strong> Same character allowlist as Category.
+              Inline error message. Save disabled until corrected or input cleared.</td>
+            </tr>
+            <tr>
+              <td>Validation — max length</td>
+              <td><strong>Blocking.</strong> Max 80 chars. Character counter shown; turns amber at 65+,
+              red when exceeded. Prevents adding the tag.</td>
+            </tr>
+            <tr>
+              <td>Duplicate tag warning</td>
+              <td><strong>Non-blocking.</strong> If typed name matches an existing
+              <span class="spec-code">SalesConfigTemplateTag__c</span> record,
+              show amber inline warning: "A tag with this name already exists — selecting it links to
+              the existing record." User can still select it; no duplicate record is created.</td>
+            </tr>
+            <tr>
+              <td rowspan="2">Duplicate category</td>
+              <td>Existing category</td>
+              <td><strong>Non-blocking.</strong> If typed category name exactly matches one already in use
+              by another template (case-insensitive), show blue info message:
+              "This category already exists — selecting it will group this template under the same category."
+              User can proceed; same string is stored, no secondary object created.</td>
+            </tr>
+            <tr>
+              <td>In-session duplicate</td>
+              <td>If user clears the selected category chip and types the same name again,
+              the combobox treats it identically to the first selection. No separate state needed.</td>
+            </tr>
+            <tr>
+              <td>Save button</td>
+              <td>Enable / disable</td>
+              <td>Disabled when any <em>blocking</em> validation error is present (special chars, length exceeded,
+              required Template Name empty). Non-blocking warnings (duplicate category/tag) do not disable save.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div><!-- /sC -->
+
+</div><!-- /page-wrap -->
+
+<script>
+/* ── Simulated existing data ─────────────────────────────────── */
+const CATS = ['Enterprise', 'SMB', 'Public Sector', 'Healthcare', 'Retail', 'Government', 'Wholesale'];
+const TAGS = ['enterprise','strategic-account','renewal','q4-priority','mobile-only',
+              'broadband','data-centre','government','fast-track','upsell','nbd'];
+
+const MAX_CAT = 255;
+const MAX_TAG = 80;
+const SPECIAL  = /[^a-zA-Z0-9 \-_]/;
+
+/* ── State ───────────────────────────────────────────────────── */
+let catSelected = null; // { val, isNew }
+let tagSelected = [
+  { val: 'enterprise',       isNew: false },
+  { val: 'strategic-account', isNew: false }
+];
+
+/* ── Init ────────────────────────────────────────────────────── */
+window.addEventListener('DOMContentLoaded', () => {
+  renderTagPills();
+  // close dropdowns on outside click
+  document.addEventListener('mousedown', e => {
+    const catWrap = document.getElementById('catWrap');
+    const tagWrap = document.getElementById('tagWrap');
+    if (catWrap && !catWrap.contains(e.target)) closeCatDd();
+    if (tagWrap && !tagWrap.contains(e.target)) closeTagDd();
+  });
+});
+
+/* ── Tab nav ─────────────────────────────────────────────────── */
+function showTab(id, btn) {
+  document.querySelectorAll('.scene').forEach(s => s.classList.remove('on'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('on'));
+  document.getElementById(id).classList.add('on');
+  btn.classList.add('on');
+}
+
+/* ══════════════════════════════════════════════════════════════
+   CATEGORY COMBOBOX
+══════════════════════════════════════════════════════════════ */
+function catOnFocus() {
+  if (catSelected) return; // chip already chosen — ignore
+  buildCatDd(document.getElementById('catInput').value.trim());
+}
+
+function catOnInput(inp) {
+  const v = inp.value;
+  updateCatCtr(v);
+  catValidate(v);
+  buildCatDd(v);
+}
+
+function catOnKey(e) {
+  if (e.key === 'Escape') { closeCatDd(); e.preventDefault(); }
+  if (e.key === 'Enter') {
+    const first = document.querySelector('#catDd .cb-opt, #catDd .cb-create');
+    if (first) { first.click(); e.preventDefault(); }
+  }
+}
+
+function buildCatDd(raw) {
+  const dd = document.getElementById('catDd');
+  if (catSelected) { dd.classList.remove('open'); return; }
+  const q = raw.trim().toLowerCase();
+  const matches = CATS.filter(c => q === '' || c.toLowerCase().includes(q));
+  const exact   = CATS.find(c => c.toLowerCase() === q);
+
+  let html = '';
+
+  if (matches.length) {
+    html += '<div class="cb-sec">Existing categories</div>';
+    matches.forEach(c => {
+      const hi = q ? c.replace(new RegExp('('+q+')', 'i'),
+                     '<span class="opt-hi">$1</span>') : c;
+      html += `<div class="cb-opt" tabindex="-1" onmousedown="selectCat('${esc(c)}',false)">
+                 <span class="opt-name">${hi}</span>
+                 <span class="opt-badge badge-ex">Existing</span>
+               </div>`;
+    });
+  } else if (q) {
+    html += '<div class="cb-empty">No matching categories</div>';
+  } else {
+    html += '<div class="cb-empty">Start typing to search or create a category</div>';
+  }
+
+  // Show Create only when there's text AND it's not an exact existing match
+  if (q && !exact && !SPECIAL.test(q) && q.length <= MAX_CAT) {
+    html += `<hr class="cb-divider"/>
+             <div class="cb-create" onmousedown="selectCat('${esc(raw.trim())}',true)">
+               <span class="cb-create-icon">+</span> Create &ldquo;${esc(raw.trim())}&rdquo;
+             </div>`;
+  }
+
+  dd.innerHTML = html;
+  dd.classList.add('open');
+}
+
+function selectCat(val, isNew) {
+  catSelected = { val, isNew };
+  const inp   = document.getElementById('catInput');
+  const chip  = document.getElementById('catChip');
+  const msg   = document.getElementById('catMsg');
+  const ctr   = document.getElementById('catCtr');
+
+  inp.value = '';
+  inp.style.display = 'none';
+  document.querySelector('#catWrap .cb-arrow').style.display = 'none';
+  closeCatDd();
+  msg.className = 'im';
+  ctr.style.display = 'none';
+
+  const cls = isNew ? 'cat-chip is-new' : 'cat-chip is-ex';
+  const badge = isNew ? ' <span class="chip-badge">NEW</span>' : ' <span class="chip-badge">EXISTING</span>';
+  chip.innerHTML = `<span class="${cls}">${esc(val)}${badge}
+    <button class="chip-rm" title="Clear" onmousedown="clearCat()">✕</button>
+  </span>`;
+  chip.style.display = 'block';
+}
+
+function clearCat() {
+  catSelected = null;
+  const inp  = document.getElementById('catInput');
+  const chip = document.getElementById('catChip');
+  const msg  = document.getElementById('catMsg');
+  const ctr  = document.getElementById('catCtr');
+
+  chip.style.display = 'none';
+  chip.innerHTML = '';
+  inp.style.display = '';
+  document.querySelector('#catWrap .cb-arrow').style.display = '';
+  msg.className = 'im';
+  ctr.style.display = 'none';
+  inp.value = '';
+  inp.focus();
+}
+
+function closeCatDd() {
+  document.getElementById('catDd').classList.remove('open');
+}
+
+function catValidate(v) {
+  const msg = document.getElementById('catMsg');
+  if (!v) { msg.className = 'im'; updateSave(); return; }
+
+  if (SPECIAL.test(v)) {
+    showMsg(msg, 'err',
+      '⊘', 'Category name cannot contain special characters. '
+           + 'Only letters, numbers, spaces, hyphens ( - ) and underscores ( _ ) are allowed.');
+    updateSave(false); return;
+  }
+  if (v.length > MAX_CAT) {
+    showMsg(msg, 'err', '⊘', `Category name must be ${MAX_CAT} characters or fewer.`);
+    updateSave(false); return;
+  }
+  const exact = CATS.find(c => c.toLowerCase() === v.trim().toLowerCase());
+  if (exact) {
+    showMsg(msg, 'info',
+      'ℹ', `This category already exists — selecting it from the list will group this
+             template under the existing <strong>"${esc(exact)}"</strong> category.`);
+  } else {
+    msg.className = 'im';
+  }
+  updateSave();
+}
+
+function updateCatCtr(v) {
+  const el = document.getElementById('catCtr');
+  if (!v) { el.style.display = 'none'; return; }
+  el.style.display = 'block';
+  el.textContent = `${v.length} / ${MAX_CAT}`;
+  el.className = 'char-ctr' + (v.length > MAX_CAT ? ' over' : v.length > MAX_CAT * 0.85 ? ' near' : '');
+}
+
+/* ══════════════════════════════════════════════════════════════
+   TAG COMBOBOX
+══════════════════════════════════════════════════════════════ */
+function tagOnFocus() {
+  buildTagDd(document.getElementById('tagInput').value.trim());
+}
+
+function tagOnInput(inp) {
+  const v = inp.value;
+  updateTagCtr(v);
+  tagValidate(v);
+  buildTagDd(v);
+}
+
+function tagOnKey(e) {
+  if (e.key === 'Escape') { closeTagDd(); e.preventDefault(); }
+  if (e.key === 'Enter') {
+    const first = document.querySelector('#tagDd .cb-opt, #tagDd .cb-create');
+    if (first) { first.click(); e.preventDefault(); }
+  }
+  if (e.key === 'Backspace' && document.getElementById('tagInput').value === '' && tagSelected.length) {
+    removeTag(tagSelected[tagSelected.length - 1].val);
+  }
+}
+
+function buildTagDd(raw) {
+  const dd = document.getElementById('tagDd');
+  const q  = raw.trim().toLowerCase();
+  const added = tagSelected.map(t => t.val.toLowerCase());
+  const avail = TAGS.filter(t => !added.includes(t.toLowerCase()));
+  const matches = avail.filter(t => q === '' || t.toLowerCase().includes(q));
+  const exact   = avail.find(t => t.toLowerCase() === q);
+
+  let html = '';
+
+  if (matches.length) {
+    html += '<div class="cb-sec">Existing tags</div>';
+    matches.forEach(t => {
+      const hi = q ? t.replace(new RegExp('('+q+')', 'i'),
+                     '<span class="opt-hi">$1</span>') : t;
+      html += `<div class="cb-opt" tabindex="-1" onmousedown="addTag('${esc(t)}',false)">
+                 <span class="opt-name">${hi}</span>
+                 <span class="opt-badge badge-ex">Existing</span>
+               </div>`;
+    });
+  } else if (q) {
+    html += '<div class="cb-empty">No matching tags</div>';
+  } else if (!avail.length) {
+    html += '<div class="cb-empty">All existing tags already added</div>';
+  } else {
+    html += '<div class="cb-empty">Start typing to search or create a tag</div>';
+  }
+
+  if (q && !exact && !SPECIAL.test(q) && q.length <= MAX_TAG) {
+    html += `<hr class="cb-divider"/>
+             <div class="cb-create" onmousedown="addTag('${esc(raw.trim())}',true)">
+               <span class="cb-create-icon">+</span> Create &ldquo;${esc(raw.trim())}&rdquo;
+             </div>`;
+  }
+
+  dd.innerHTML = html;
+  dd.classList.add('open');
+}
+
+function addTag(val, isNew) {
+  const msg = document.getElementById('tagMsg');
+  // guard: duplicate in current selection
+  if (tagSelected.find(t => t.val.toLowerCase() === val.toLowerCase())) {
+    showMsg(msg, 'warn', '⚠', `<strong>"${esc(val)}"</strong> is already added.`);
+    closeTagDd(); return;
+  }
+  tagSelected.push({ val, isNew });
+  document.getElementById('tagInput').value = '';
+  document.getElementById('tagCtr').style.display = 'none';
+  msg.className = 'im';
+  renderTagPills();
+  closeTagDd();
+  document.getElementById('tagInput').focus();
+  updateSave();
+}
+
+function removeTag(val) {
+  tagSelected = tagSelected.filter(t => t.val !== val);
+  renderTagPills();
+  updateSave();
+}
+
+function renderTagPills() {
+  const container = document.getElementById('tagPills');
+  if (!container) return;
+  container.innerHTML = tagSelected.map(t => {
+    const cls    = t.isNew ? 'tag-pill tp-new' : 'tag-pill tp-ex';
+    const badge  = t.isNew ? ' <span class="tp-new-badge">NEW</span>' : '';
+    return `<span class="${cls}">${esc(t.val)}${badge}
+      <button class="tp-rm" title="Remove" onmousedown="removeTag('${esc(t.val)}')">✕</button>
+    </span>`;
+  }).join('');
+}
+
+function closeTagDd() {
+  document.getElementById('tagDd').classList.remove('open');
+}
+
+function tagValidate(v) {
+  const msg = document.getElementById('tagMsg');
+  if (!v) { msg.className = 'im'; updateSave(); return; }
+
+  if (SPECIAL.test(v)) {
+    showMsg(msg, 'err', '⊘',
+      'Tag name cannot contain special characters. '
+      + 'Only letters, numbers, spaces, hyphens ( - ) and underscores ( _ ) are allowed.');
+    updateSave(false); return;
+  }
+  if (v.length > MAX_TAG) {
+    showMsg(msg, 'err', '⊘', `Tag name must be ${MAX_TAG} characters or fewer. Current length: <strong>${v.length}</strong>.`);
+    updateSave(false); return;
+  }
+  // warn if exact match in TAGS list (existing record)
+  const exact = TAGS.find(t => t.toLowerCase() === v.trim().toLowerCase());
+  if (exact) {
+    showMsg(msg, 'warn', '⚠',
+      `A tag named <strong>"${esc(exact)}"</strong> already exists — selecting it from the list will link to the existing tag record.`);
+  } else {
+    msg.className = 'im';
+  }
+  updateSave();
+}
+
+function updateTagCtr(v) {
+  const el = document.getElementById('tagCtr');
+  if (!v) { el.style.display = 'none'; return; }
+  el.style.display = 'block';
+  el.textContent = `${v.length} / ${MAX_TAG}`;
+  el.className = 'char-ctr' + (v.length > MAX_TAG ? ' over' : v.length >= 65 ? ' near' : '');
+}
+
+/* ── Shared helpers ──────────────────────────────────────────── */
+function showMsg(el, type, icon, html) {
+  el.className = `im ${type} show`;
+  el.innerHTML = `<em class="im-icon">${icon}</em><span>${html}</span>`;
+}
+
+function hasBlockingError() {
+  const catMsg = document.getElementById('catMsg');
+  const tagMsg = document.getElementById('tagMsg');
+  const catInp = document.getElementById('catInput');
+  const tagInp = document.getElementById('tagInput');
+  const tplName = document.getElementById('tplName');
+  if (!catMsg || !tagMsg) return false;
+  const catErr = catMsg.classList.contains('err');
+  const tagErr = tagMsg.classList.contains('err');
+  // also block if text is currently in the tag input with error
+  const tagInpOverflow = tagInp && tagInp.value.length > MAX_TAG;
+  const catInpOverflow = catInp && catInp.value.length > MAX_CAT;
+  const nameEmpty = tplName && !tplName.value.trim();
+  return catErr || tagErr || tagInpOverflow || catInpOverflow || nameEmpty;
+}
+
+function updateSave(forceDisable) {
+  const btn = document.getElementById('saveBtn');
+  if (!btn) return;
+  btn.disabled = forceDisable === false ? true : hasBlockingError();
+}
+
+function esc(s) {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+</script>
+</body>
+</html>
